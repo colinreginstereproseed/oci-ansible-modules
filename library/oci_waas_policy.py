@@ -2099,6 +2099,10 @@ def main():
                                             "URL_STARTS_WITH",
                                             "URL_PART_ENDS_WITH",
                                             "URL_PART_CONTAINS",
+                                            "URL_DOES_NOT_MATCH_REGEX",
+                                            "URL_DOES_NOT_START_WITH",
+                                            "URL_PART_DOES_NOT_CONTAIN",
+                                            "URL_PART_DOES_NOT_END_WITH"
                                             "URL_REGEX",
                                             "IP_IS",
                                             "IP_IS_NOT",
