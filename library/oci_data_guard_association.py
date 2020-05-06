@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (c) 2018, Oracle and/or its affiliates.
+# Copyright (c) 2018,2020, Oracle and/or its affiliates.
 # This software is made available to you under the terms of the GPL 3.0 license or the Apache 2.0 license.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 # Apache License v2.0
@@ -41,7 +41,7 @@ options:
         description: Specifies where to create the associated database ExistingDbSystem is the
                      only supported  value.
         required: false
-        choices: ['ExistingDbSystem']
+        choices: ['ExistingDbSystem', 'NewDbSystem']
         default: 'ExistingDbSystem'
     database_admin_password:
         description: A strong password for SYS, SYSTEM, and PDB Admin. The password
@@ -72,6 +72,22 @@ options:
         required: false
         default: 'present'
         choices: ['present', 'switchover', 'failover', 'reinstate']
+    availability_domain:
+         description: Specifies an availability domain for the standby database.
+         required: false
+    display_name:
+        description: Non-unique display name for the DB system containing the standby database.
+        required: false
+    hostname:
+        description: Host name for the DB system that contains the standby database. The host name must
+                     begin with an alphabetic character, and can contain only alphanumeric characters & hyphens(-).
+        required: false
+    shape:
+        description: Specifies a shape to use to create the standby DB system.
+        required: false
+    subnet_id:
+        description: The subnet to which the DB system containing the standby database attaches.
+        required: false
 author:
     - "Debayan Gupta(@debayan_gupta)"
 extends_documentation_fragment: [ oracle, oracle_wait_options, oracle_creatable_resource ]
@@ -114,6 +130,21 @@ EXAMPLES = """
       data_guard_association_id: 'ocid1.dgassociation.abuw'
       database_admin_password: 'pasword#_'
       state: 'reinstate'
+
+# Create Data Guard Association with New DB System
+- name: Create Data Guard Association
+  oci_data_guard_association:
+      database_id: 'ocid1.database..abuw'
+      creation_type: 'NewDbSystem'
+      database_admin_password: 'pasword#_'
+      protection_mode: 'MAXIMUM_PERFORMANCE'
+      transport_type: 'ASYNC'
+      display_name: 'db_system_display_name'
+      subnet_id: 'ocid1.subnet.oc1.iad.xxxxEXAMPLExxxx'
+      availability_domain: 'IwGV:US-EXAMPLE-AD'
+      hostname: 'db_system_host_name'
+      wait: False
+      state: 'present'
 """
 
 RETURN = """
@@ -222,6 +253,7 @@ try:
     from oci.exceptions import ServiceError
     from oci.database.models import (
         CreateDataGuardAssociationToExistingDbSystemDetails,
+        CreateDataGuardAssociationWithNewDbSystemDetails,
         SwitchoverDataGuardAssociationDetails,
         FailoverDataGuardAssociationDetails,
         ReinstateDataGuardAssociationDetails,
@@ -282,6 +314,10 @@ def get_creation_type_instance(module):
     if module.params.get("creation_type") == "ExistingDbSystem":
         create_data_guard_association_details = (
             CreateDataGuardAssociationToExistingDbSystemDetails()
+        )
+    if module.params.get("creation_type") == "NewDbSystem":
+        create_data_guard_association_details = (
+            CreateDataGuardAssociationWithNewDbSystemDetails()
         )
     return create_data_guard_association_details
 
@@ -404,13 +440,18 @@ def main():
         dict(
             database_id=dict(type="str", required=True),
             data_guard_association_id=dict(type="str", required=False, aliases=["id"]),
+            display_name=dict(type="str", required=False),
+            hostname=dict(type="str", required=False),
+            availability_domain=dict(type="str", required=False),
+            subnet_id=dict(type="str", required=False),
             creation_type=dict(
                 type="str",
                 required=False,
                 default="ExistingDbSystem",
-                choices=["ExistingDbSystem"],
+                choices=["ExistingDbSystem", "NewDbSystem"],
             ),
             database_admin_password=dict(type="str", required=False, no_log=True),
+            shape=dict(type="str", required=False),
             protection_mode=dict(
                 type="str",
                 required=False,
